@@ -22,6 +22,7 @@ async function run() {
     await client.connect();
     console.log("db connected");
     const partsCollection = client.db("moto_industrial").collection("parts");
+    const orderCollection = client.db("moto_industrial").collection("orders");
 
     app.get("/parts", async (req, res) => {
       const parts = await partsCollection.find().toArray();
@@ -29,8 +30,15 @@ async function run() {
     });
     app.get("/parts/:id", async (req, res) => {
       const id = req.params.id;
-      const query = { _id: ObjectId(id) };
+      const query = { _id: new ObjectId(id) };
       const result = await partsCollection.findOne(query);
+      res.send(result);
+    });
+   
+    // Order collection API
+    app.post("/orders", async (req, res) => {
+      const order = req.body;
+      const result = await orderCollection.insertOne(order);
       res.send(result);
     });
   } finally {
