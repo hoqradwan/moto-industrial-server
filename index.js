@@ -34,13 +34,37 @@ async function run() {
       const result = await partsCollection.findOne(query);
       res.send(result);
     });
-   
+    // update parts
+    app.put("/parts/:id", async (req, res) => {
+      const id = req.params.id;
+      const updatedParts = req.body;
+      const query = { _id: ObjectId(id) };
+      const options = { upsert: true };
+      const updatedDoc = {
+        $set: {
+          availableQ: updatedParts.availableQ,
+        },
+      };
+      const result = await partsCollection.updateOne(query, updatedDoc, options)
+      res.send(result)
+    });
     // Order collection API
     app.post("/orders", async (req, res) => {
       const order = req.body;
       const result = await orderCollection.insertOne(order);
       res.send(result);
     });
+    // Get orders
+    app.get("/orders", async (req, res) => {
+      const orders = await orderCollection.find().toArray();
+      res.send(orders);
+    });
+    app.delete('/orders/:id', async(req, res)=>{
+      const id = req.params.id;
+      const query = {_id : ObjectId(id)}
+      const result = await orderCollection.deleteOne(query)
+      res.send(result)
+    })
   } finally {
   }
 }
