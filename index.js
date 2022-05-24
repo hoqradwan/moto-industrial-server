@@ -90,6 +90,11 @@ async function run() {
       const parts = await partsCollection.find().toArray();
       res.send(parts);
     });
+    app.post("/parts", async (req, res) => {
+      const part = req.body;
+      const result = await partsCollection.insertOne(part);
+      res.send(result);
+    });
     app.get("/parts/:id", async (req, res) => {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
