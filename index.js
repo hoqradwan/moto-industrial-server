@@ -23,6 +23,7 @@ async function run() {
     console.log("db connected");
     const partsCollection = client.db("moto_industrial").collection("parts");
     const orderCollection = client.db("moto_industrial").collection("orders");
+    const reviewCollection = client.db("moto_industrial").collection("reviews");
 
     app.get("/parts", async (req, res) => {
       const parts = await partsCollection.find().toArray();
@@ -59,12 +60,26 @@ async function run() {
       const orders = await orderCollection.find().toArray();
       res.send(orders);
     });
+    // Delete order
     app.delete('/orders/:id', async(req, res)=>{
       const id = req.params.id;
       const query = {_id : ObjectId(id)}
       const result = await orderCollection.deleteOne(query)
       res.send(result)
     })
+   
+    // Review API
+    app.post('/reviews', async(req,res)=>{
+      const review = req.body;
+      const result = await reviewCollection.insertOne(review);
+      res.send(result);
+    })
+
+    app.get("/reviews", async (req, res) => {
+      const reviews = await reviewCollection.find().toArray();
+      res.send(reviews);
+    });
+
   } finally {
   }
 }
