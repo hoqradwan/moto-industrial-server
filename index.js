@@ -3,8 +3,7 @@ const cors = require("cors");
 const jwt = require("jsonwebtoken");
 require("dotenv").config();
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
-const res = require("express/lib/response");
-
+const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 const app = express();
 const port = process.env.PORT || 5000;
 
@@ -39,9 +38,24 @@ async function run() {
     const partsCollection = client.db("moto_industrial").collection("parts");
     const orderCollection = client.db("moto_industrial").collection("orders");
     const reviewCollection = client.db("moto_industrial").collection("reviews");
-    const userCollection = client.db("doctors_portal").collection("users");
-    const profileCollection = client.db("doctors_portal").collection("profiles");
-  
+    const userCollection = client.db("moto_industrial").collection("users");
+    const profileCollection = client.db("moto_industrial").collection("profiles");
+    const paymentCollection = client.db('moto_industrial').collection('payments');
+
+    // Payment
+    
+    app.post('/create-payment-intent', verifyJWT, async(req, res) =>{
+      const order = req.body;
+      const price = order.price;
+      const amount = price*100;
+      const paymentIntent = await stripe.paymentIntents.create({
+        amount : amount,
+        currency: 'usd',
+        payment_method_types:['card']
+      });
+      res.send({clientSecret: paymentIntent.client_secret})
+    });
+
     // AUTH    
     const verifyAdmin = async (req, res, next) => {
       const requester = req.decoded.email;
@@ -64,7 +78,7 @@ async function run() {
       const isAdmin = user.role === 'admin';
       res.send({ admin: isAdmin })
     })
-    app.put('/user/admin/:email', verifyJWT, verifyAdmin,  async (req, res) => {
+   app.put('/user/admin/:email', verifyJWT, verifyAdmin,  async (req, res) => {
       const email = req.params.email;
       const filter = { email: email };
       const updateDoc = {
@@ -72,7 +86,7 @@ async function run() {
       };
       const result = await userCollection.updateOne(filter, updateDoc);
       res.send(result);
-    })
+    }) 
     app.put('/user/:email', async (req, res) => {
       const email = req.params.email;
       const user = req.body;
@@ -134,16 +148,39 @@ async function run() {
       res.send(result);
     });
     // Get orders
-    app.get("/orders", async (req, res) => {
+    app.get("/orders", verifyJWT, async (req, res) => {
       const orders = await orderCollection.find().toArray();
       res.send(orders);
     });
-    app.get("/orders", async (req, res) => {
+    app.get("/orders", verifyJWT, async (req, res) => {
       const email = req.query.email;
       const query = {email: email}
       const orders = await orderCollection.find(query).toArray();
       res.send(orders);
     });
+    // Get order by id
+    app.get("/orders/:id", verifyJWT, async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: ObjectId(id) };
+      const result = await orderCollection.findOne(query);
+      res.send(result);
+    });
+    // payment of order
+    app.patch('/orders/:id', verifyJWT, async(req, res) =>{
+      const id  = req.params.id;
+      const payment = req.body;
+      const filter = {_id: ObjectId(id)};
+      const updatedDoc = {
+        $set: {
+          paid: true,
+          transactionId: payment.transactionId
+        }
+      }
+
+      const result = await paymentCollection.insertOne(payment);
+      const updatedOrder = await bookingCollection.updateOne(filter, updatedDoc);
+      res.send(updatedOrder);
+    })
     // Delete order
     app.delete("/orders/:id", async (req, res) => {
       const id = req.params.id;
@@ -165,9 +202,12 @@ async function run() {
     });
 
     // Profile API
-    const profile = req.body;
-    const result = await profileCollection.insertOne(profile)
-    res.send(result)
+    app.post('/profile', async(req, res)=>{
+      const profile = req.body;
+      const result = await profileCollection.insertOne(profile)
+      res.send(result)
+    })
+   
   } finally {
   }
 }
