@@ -3,6 +3,7 @@ const cors = require("cors");
 const jwt = require("jsonwebtoken");
 require("dotenv").config();
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
+const res = require("express/lib/response");
 
 const app = express();
 const port = process.env.PORT || 5000;
@@ -39,6 +40,7 @@ async function run() {
     const orderCollection = client.db("moto_industrial").collection("orders");
     const reviewCollection = client.db("moto_industrial").collection("reviews");
     const userCollection = client.db("doctors_portal").collection("users");
+    const profileCollection = client.db("doctors_portal").collection("profiles");
   
     // AUTH    
     const verifyAdmin = async (req, res, next) => {
@@ -119,6 +121,12 @@ async function run() {
       );
       res.send(result);
     });
+    app.delete("/parts/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: ObjectId(id) };
+      const result = await partsCollection.deleteOne(query);
+      res.send(result);
+    });
     // Order collection API
     app.post("/orders", async (req, res) => {
       const order = req.body;
@@ -128,6 +136,12 @@ async function run() {
     // Get orders
     app.get("/orders", async (req, res) => {
       const orders = await orderCollection.find().toArray();
+      res.send(orders);
+    });
+    app.get("/orders", async (req, res) => {
+      const email = req.query.email;
+      const query = {email: email}
+      const orders = await orderCollection.find(query).toArray();
       res.send(orders);
     });
     // Delete order
@@ -149,6 +163,11 @@ async function run() {
       const reviews = await reviewCollection.find().toArray();
       res.send(reviews);
     });
+
+    // Profile API
+    const profile = req.body;
+    const result = await profileCollection.insertOne(profile)
+    res.send(result)
   } finally {
   }
 }
