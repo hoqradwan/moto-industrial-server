@@ -56,7 +56,6 @@ async function run() {
       });
       res.send({clientSecret: paymentIntent.client_secret})
     });
-
     // AUTH    
     const verifyAdmin = async (req, res, next) => {
       const requester = req.decoded.email;
