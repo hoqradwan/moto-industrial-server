@@ -152,12 +152,12 @@ async function run() {
       const orders = await orderCollection.find().toArray();
       res.send(orders);
     });
-   /*  app.get("/orders",  async (req, res) => {
+    app.get("/orders",  async (req, res) => {
       const email = req.query.email;
       const query = {email: email}
       const orders = await orderCollection.find(query).toArray();
       res.send(orders);
-    }); */
+    });
     // Get order by id
     app.get("/orders/:id",  async (req, res) => {
       const id = req.params.id;
