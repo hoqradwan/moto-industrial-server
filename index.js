@@ -48,7 +48,7 @@ async function run() {
       const order = req.body;
       const price = order.price;
       console.log(price)
-      const requestAmount = price;
+      const requestAmount = price * 100;
       const paymentIntent = await stripe.paymentIntents.create({
         amount : requestAmount,
         currency: 'usd',
@@ -73,7 +73,7 @@ async function run() {
       res.send(users);
     });
 
-    
+
     app.get('/admin/:email', async (req, res) => {
       const email = req.params.email;
       const user = await userCollection.findOne({ email: email });
