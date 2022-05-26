@@ -19,14 +19,14 @@ const client = new MongoClient(uri, {
 
 function verifyJWT(req, res, next) {
   const authHeader = req.headers.authorization;
-  /*   if (!authHeader) {
+  if (!authHeader) {
     return res.status(401).send({ message: 'UnAuthorized access' });
-  } */
+  } 
   const token = authHeader.split(" ")[1];
   jwt.verify(token, process.env.ACCESS_TOKEN, function (err, decoded) {
-    /*   if (err) {
+       if (err) {
       return res.status(403).send({ message: 'Forbidden access' })
-    } */
+    } 
     req.decoded = decoded;
     next();
   });
@@ -44,12 +44,13 @@ async function run() {
 
     // Payment
     
-    app.post('/create-payment-intent', verifyJWT, async(req, res) =>{
+    app.post('/create-payment-intent',  async(req, res) =>{
       const order = req.body;
       const price = order.price;
-      const amount = price*100;
+      console.log(price)
+      const requestAmount = price;
       const paymentIntent = await stripe.paymentIntents.create({
-        amount : amount,
+        amount : requestAmount,
         currency: 'usd',
         payment_method_types:['card']
       });
@@ -100,7 +101,6 @@ async function run() {
       res.send({ result, token });
     });
 
-    // ...................................................................
 
     app.get("/parts", async (req, res) => {
       const parts = await partsCollection.find().toArray();
@@ -148,25 +148,25 @@ async function run() {
       res.send(result);
     });
     // Get orders
-    app.get("/orders", verifyJWT, async (req, res) => {
+    app.get("/orders",  async (req, res) => {
       const orders = await orderCollection.find().toArray();
       res.send(orders);
     });
-    app.get("/orders", verifyJWT, async (req, res) => {
+   /*  app.get("/orders",  async (req, res) => {
       const email = req.query.email;
       const query = {email: email}
       const orders = await orderCollection.find(query).toArray();
       res.send(orders);
-    });
+    }); */
     // Get order by id
-    app.get("/orders/:id", verifyJWT, async (req, res) => {
+    app.get("/orders/:id",  async (req, res) => {
       const id = req.params.id;
       const query = { _id: ObjectId(id) };
       const result = await orderCollection.findOne(query);
       res.send(result);
     });
     // payment of order
-    app.patch('/orders/:id', verifyJWT, async(req, res) =>{
+    app.patch('/orders/:id',  async(req, res) =>{
       const id  = req.params.id;
       const payment = req.body;
       const filter = {_id: ObjectId(id)};
@@ -179,7 +179,7 @@ async function run() {
 
       const result = await paymentCollection.insertOne(payment);
       const updatedOrder = await bookingCollection.updateOne(filter, updatedDoc);
-      res.send(updatedOrder);
+      res.send({updatedOrder , result});
     })
     // Delete order
     app.delete("/orders/:id", async (req, res) => {
