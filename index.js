@@ -111,7 +111,7 @@ async function run() {
       const result = await partsCollection.insertOne(part);
       res.send(result);
     });
-    app.get("/parts/:id", async (req, res) => {
+    app.get("/parts/:id", verifyJWT, async (req, res) => {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
       const result = await partsCollection.findOne(query);
